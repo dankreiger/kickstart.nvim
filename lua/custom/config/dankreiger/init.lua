@@ -1,74 +1,138 @@
--- config: dankreiger
+-- Set leader key (assuming Space is your leader key)
+vim.g.mapleader = ' '
 
---------------------------------
+-- Helper function for creating keymaps
+local function map(mode, lhs, rhs, opts)
+  local options = { noremap = true, silent = true }
+  if opts then
+    options = vim.tbl_extend('force', options, opts)
+  end
+  vim.keymap.set(mode, lhs, rhs, options)
+end
 
--- Enable nerd font
-vim.g.have_nerd_font = true
+-- Existing mappings
 
-vim.g.have_nerd_font = true
-vim.opt.number = true
-vim.opt.relativenumber = true
+-- Quick quit (Space + q)
+map('n', '<leader>q', ':q<CR>', { desc = 'Quick quit' })
 
--- Local shortcut to set key mappings
-local keyMapSet = vim.keymap.set
-local opts = { noremap = true, silent = true }
+-- Quick source current file (Space + s + o)
+map('n', '<leader>so', ':so %<CR>', { desc = 'Source current file' })
 
--- Set space as the leader key (already defined in parent)
--- vim.g.mapleader = ' '
--- keyMapSet('n', '<Space>', '', {})
+-- Even quicker source current file (Enter key)
+-- Note: This overrides the default Enter key behavior in normal mode
+map('n', '<CR>', function()
+  if vim.bo.buftype == '' then -- Only for normal buffers
+    vim.cmd 'write' -- Save the current file if it's a normal buffer
+    vim.cmd 'source $MYVIMRC'
+    vim.notify('Neovim config reloaded!', vim.log.levels.INFO)
+  else
+    -- Perform the default Enter key behavior
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, false, true), 'n', false)
+  end
+end, { desc = 'Save file and reload nvim config' })
 
--- Select all text
-keyMapSet('n', '<leader>a', 'ggVG', { silent = true })
-keyMapSet('n', '<C-a>', 'a', { silent = true })
+-- Text movement mappings (retained from original config)
 
--- Close buffers with leader + q
-keyMapSet('n', '<leader>q', ':bd<CR>', opts)
+-- Move lines up and down in normal mode (Alt + Up/Down Arrow)
+map('n', '<M-Up>', ':m .-2<CR>==', { desc = 'Move line up' })
+map('n', '<M-Down>', ':m .+1<CR>==', { desc = 'Move line down' })
 
--- NERDTree toggling
-keyMapSet('n', '<leader>n', ':NERDTreeToggle<CR>', opts)
+-- Move lines up and down in insert mode (Alt + Up/Down Arrow)
+map('i', '<M-Up>', '<Esc>:m .-2<CR>==gi', { desc = 'Move line up' })
+map('i', '<M-Down>', '<Esc>:m .+1<CR>==gi', { desc = 'Move line down' })
 
--- Undotree toggling
-keyMapSet('n', '<leader>u', ':UndotreeToggle<CR>', opts)
+-- Move lines up and down in visual mode (Alt + Up/Down Arrow)
+map('v', '<M-Up>', ":m '<-2<CR>gv=gv", { desc = 'Move selection up' })
+map('v', '<M-Down>', ":m '>+1<CR>gv=gv", { desc = 'Move selection down' })
 
--- Telescope mappings
-local builtin = require 'telescope.builtin'
-keyMapSet('n', '<leader>ff', builtin.find_files, {})
-keyMapSet('n', '<leader>fg', builtin.live_grep, {})
-keyMapSet('n', '<leader>fb', builtin.buffers, {})
-keyMapSet('n', '<leader>fh', builtin.help_tags, {})
+-- Move visual block up and down (J/K in visual mode)
+map('v', 'J', ":m '>+1<CR>gv=gv", { desc = 'Move visual block down' })
+map('v', 'K', ":m '<-2<CR>gv=gv", { desc = 'Move visual block up' })
 
--- Line movement mappings
-keyMapSet('n', '<M-Up>', ':m .-2<CR>==', opts)
-keyMapSet('i', '<M-Up>', '<Esc>:m .-2<CR>==gi', opts)
-keyMapSet('v', '<M-Up>', ":m '<-2<CR>gv=gv", opts)
+-- New helpful mappings
 
-keyMapSet('n', '<M-Down>', ':m .+1<CR>==', opts)
-keyMapSet('i', '<M-Down>', '<Esc>:m .+1<CR>==gi', opts)
-keyMapSet('v', '<M-Down>', ":m '>+1<CR>gv=gv", opts)
+-- Save file (Space + w)
+map('n', '<leader>w', ':w<CR>', { desc = 'Save file' })
 
--- Move visual block up and down
-keyMapSet('v', 'J', ":m '>+1<CR>gv=gv", opts)
-keyMapSet('v', 'K', ":m '<-2<CR>gv=gv", opts)
+-- UndoTree toggle (Space + u)
+map('n', '<leader>u', ':UndotreeToggle<CR>', { desc = 'Toggle UndoTree' })
 
--- Interactive Rebase mappings
-keyMapSet('n', '<leader>ri', ':G rebase -i<CR>', opts)
-keyMapSet('n', '<leader>rp', ':G rebase -i HEAD~1<CR>', opts)
+-- Better window navigation (Ctrl + h/j/k/l)
+map('n', '<C-h>', '<C-w>h', { desc = 'Move to left window' })
+map('n', '<C-j>', '<C-w>j', { desc = 'Move to bottom window' })
+map('n', '<C-k>', '<C-w>k', { desc = 'Move to top window' })
+map('n', '<C-l>', '<C-w>l', { desc = 'Move to right window' })
 
-keyMapSet('n', '<leader>ps', ':%s/\\cpick/squash/gc<CR>', { noremap = true, silent = true })
+-- Resize with arrows (Ctrl + Arrow keys)
+map('n', '<C-Up>', ':resize -2<CR>', { desc = 'Resize window up' })
+map('n', '<C-Down>', ':resize +2<CR>', { desc = 'Resize window down' })
+map('n', '<C-Left>', ':vertical resize -2<CR>', { desc = 'Resize window left' })
+map('n', '<C-Right>', ':vertical resize +2<CR>', { desc = 'Resize window right' })
 
--- Open Terminal in Split
-vim.api.nvim_create_user_command('Term', function()
-  vim.cmd 'split'
-  vim.cmd 'terminal'
-  vim.cmd 'resize 20'
-  vim.cmd 'startinsert'
-end, {})
+-- Navigate buffers (Shift + h/l)
+map('n', '<S-l>', ':bnext<CR>', { desc = 'Next buffer' })
+map('n', '<S-h>', ':bprevious<CR>', { desc = 'Previous buffer' })
 
--- Automatically create missing directories when saving a file
-vim.api.nvim_create_autocmd('BufWritePre', {
-  group = vim.api.nvim_create_augroup('auto_create_dir', { clear = true }),
-  callback = function(event)
-    local file = vim.loop.fs_realpath(event.match) or event.match
-    vim.fn.mkdir(vim.fn.fnamemodify(file, ':p:h'), 'p')
-  end,
-})
+-- Stay in indent mode (< and > in visual mode)
+map('v', '<', '<gv', { desc = 'Unindent line' })
+map('v', '>', '>gv', { desc = 'Indent line' })
+
+-- Maintain the cursor position when yanking a visual selection
+map('v', 'y', 'myy`y')
+
+-- Paste replace visual selection without copying it
+map('v', 'p', '"_dP')
+
+-- Terminal-like shortcuts for insert mode
+
+-- Ctrl + a: Move to beginning of line
+-- map('i', '<C-a>', '<C-o>^', { desc = 'Move to beginning of line' })
+map('i', '<C-a>', '<Esc>^i', { noremap = true, desc = 'Move to beginning of line' })
+
+-- Ctrl + e: Move to end of line
+map('i', '<C-e>', '<C-o>$', { desc = 'Move to end of line' })
+
+-- Option + Right Arrow: Move to next word
+-- Note: In many terminals, Option + Right Arrow sends 'f'
+map('i', '<M-f>', '<C-o>w', { desc = 'Move to next word' })
+
+-- Option + Left Arrow: Move to previous word
+-- Note: In many terminals, Option + Left Arrow sends 'b'
+map('i', '<M-b>', '<C-o>b', { desc = 'Move to previous word' })
+
+-- Ctrl + k: Delete from cursor to end of line
+map('i', '<C-k>', '<C-o>D', { desc = 'Delete to end of line' })
+
+-- Ctrl + u: Delete from cursor to beginning of line
+map('i', '<C-u>', '<C-u>', { desc = 'Delete to beginning of line' })
+
+-- Ctrl + w: Delete word before cursor
+map('i', '<C-w>', '<C-w>', { desc = 'Delete word before cursor' })
+
+-- Ctrl + Left Arrow: Move to previous word
+map('i', '<C-Left>', '<C-o>b', { desc = 'Move to previous word' })
+
+-- Ctrl + Right Arrow: Move to next word
+map('i', '<C-Right>', '<C-o>w', { desc = 'Move to next word' })
+
+-- Set options
+local options = {
+  clipboard = 'unnamedplus', -- Use system clipboard
+  ignorecase = true, -- Ignore case in search patterns
+  smartcase = true, -- Override ignorecase if search contains uppercase
+  mouse = 'a', -- Enable mouse support
+  number = true, -- Show line numbers
+  relativenumber = true, -- Use relative line numbers
+  expandtab = true, -- Use spaces instead of tabs
+  shiftwidth = 2, -- Number of spaces for autoindent
+  tabstop = 2, -- Number of spaces a tab counts for
+  termguicolors = true, -- Enable 24-bit RGB color in the TUI
+}
+
+for k, v in pairs(options) do
+  vim.opt[k] = v
+end
+
+-- Additional Neovim configurations can be added here
+
+-- Plugin configurations would go here (using your preferred plugin manager)
